@@ -151,14 +151,6 @@ outputs/predicted_lulc.tif
 
 This is a georeferenced GeoTIFF containing the predicted land cover classes. It uses the same CRS and spatial extent as the input Sentinel-2 image.
 
-### Class codes
-
-```text
-0 = Forest
-1 = Other
-2 = Tea
-3 = Water
-```
 
 ## Repository Structure
 
