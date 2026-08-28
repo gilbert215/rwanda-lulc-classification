@@ -1,0 +1,19 @@
+# Large raw data (exclude the Sentinel-2 image — too large / not shareable)
+data/S2_srw.tif
+data/*.aux.xml
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+
+# Conda / environment
+.conda/
+*.egg-info/
+
+# OS files
+.DS_Store
+Thumbs.db
