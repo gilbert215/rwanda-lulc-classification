@@ -1,83 +1,183 @@
-# Land Use / Land Cover Classification — South-Western Rwanda
+# Land Use / Land Cover Classification for  South-Western Rwanda
 
 ## Overview
-This project combines Sentinel-2 multispectral satellite imagery with machine
-learning to produce a land use / land cover (LULC) map of a region in the
-South-Western province of Rwanda. The model classifies land into four categories:
-**Forest, Tea, Water, and Other**.
+
+This project uses Sentinel-2 satellite imagery and machine learning to classify land use and land cover (LULC) in a region of South-Western Rwanda.
+
+The model classifies the area into four classes:
+
+* **Forest**
+* **Tea**
+* **Water**
+* **Other**
+
+The final result is a georeferenced LULC map covering the study area.
 
 ## Data
-- **Training-validation points**: 800 labeled points (shapefile format), 200 per
-  class, provided as `data/train_val.shp` (+ associated `.shx`, `.dbf`, `.prj`, `.cpg` files)
-- **Satellite imagery**: `data/S2_srw.tif` — an 11-band Sentinel-2 surface
-  reflectance GeoTIFF (bands B2–B9, B11, B12), covering the area of interest
-- Both datasets are in **EPSG:4326** (WGS84), so no reprojection was required
+
+The project uses two main datasets:
+
+### Training Data
+
+* **File:** `data/train_val.shp`
+* **Format:** Shapefile
+* **Total points:** 800
+* **Points per class:** 200
+* **Classes:** Forest, Tea, Water, Other
+
+The shapefile also includes the required `.shx`, `.dbf`, `.prj`, and `.cpg` files.
+
+### Sentinel-2 Imagery
+
+* **File:** `data/S2_srw.tif`
+* **Format:** GeoTIFF
+* **Bands:** 11 Sentinel-2 surface reflectance bands (B2–B9, B11, B12)
+* **Coverage:** Study area in South-Western Rwanda
+
+Both the training points and satellite imagery use **EPSG:4326 (WGS84)**, so no reprojection was required.
 
 ## Environment Setup
-A conda environment (`rwanda-oath`) was created with the following key packages:
-`geopandas`, `rasterio`, `scikit-learn`, `pandas`, `numpy`, `matplotlib`, `jupyter`.
 
-To recreate it:
+The project was developed using a Conda environment called `rwanda-oath`.
+
+### Create the environment
+
 ```bash
 conda create -n rwanda-oath python=3.11 -y
 conda activate rwanda-oath
 conda install -c conda-forge geopandas rasterio shapely fiona scikit-learn pandas numpy matplotlib jupyter -y
 ```
 
+### Main packages
+
+* `geopandas` — working with the training points
+* `rasterio` — reading and processing satellite imagery
+* `scikit-learn` — machine learning
+* `pandas` and `numpy` — data processing
+* `matplotlib` — visualization
+* `jupyter` — running the analysis notebook
+
 ## Methodology
-1. **Data loading**: Loaded the training-validation points with `geopandas` and
-   inspected the raster with `rasterio` (band count, CRS, bounds).
-2. **Data exploration**: Verified class balance (200 points per class, no missing
-   values) and visually inspected spectral separability of engineered features
-   across classes.
-3. **Feature engineering**: Sampled all 11 raw spectral bands at each training
-   point location, then computed three spectral indices:
-   - **NDVI** (Normalized Difference Vegetation Index) — separates vegetated
-     from non-vegetated land
-   - **NDWI** (Normalized Difference Water Index) — isolates water bodies
-   - **NDMI** (Normalized Difference Moisture Index) — helps distinguish
-     vegetation types by canopy moisture
-4. **Train/validation split**: 80/20 stratified split (640 training / 160
-   validation points), preserving class balance in both sets.
-5. **Model training**: Trained a **Random Forest Classifier** (300 trees) on the
-   14 features (11 bands + 3 indices), validated with 5-fold stratified
-   cross-validation on the training set.
-6. **Prediction**: Applied the trained model to every pixel in the full Sentinel-2
-   image (~576,000 pixels) to generate a complete predicted land cover map.
-7. **Evaluation**: Assessed final performance on the held-out validation set using
-   a classification report and a **normalized confusion matrix**.
+
+The classification workflow follows these main steps:
+
+### 1. Load and inspect the data
+
+The training points were loaded using GeoPandas, while Rasterio was used to inspect the Sentinel-2 image, including its bands, CRS, bounds, and dimensions.
+
+### 2. Explore the data
+
+The training data was checked for class balance and missing values.
+
+There are **200 points for each class**, giving a total of 800 labeled points.
+
+The spectral features were also visualized to see how well the classes could be separated.
+
+### 3. Feature engineering
+
+The 11 Sentinel-2 spectral bands were sampled at each training point.
+
+Three additional spectral indices were calculated:
+
+* **NDVI (Normalized Difference Vegetation Index)** — helps identify vegetation.
+* **NDWI (Normalized Difference Water Index)** — helps identify water.
+* **NDMI (Normalized Difference Moisture Index)** — provides information about vegetation moisture.
+
+This resulted in **14 features** in total:
+
+**11 spectral bands + 3 spectral indices**
+
+### 4. Train-validation split
+
+The dataset was split into:
+
+* **80% training:** 640 points
+* **20% validation:** 160 points
+
+A stratified split was used to keep the same class proportions in both datasets.
+
+### 5. Train the model
+
+A **Random Forest Classifier** with 300 trees was trained using the 14 features.
+
+Five-fold stratified cross-validation was performed on the training data to evaluate the model during training.
+
+### 6. Generate the LULC map
+
+The trained model was applied to every pixel in the Sentinel-2 image.
+
+This produced a complete land cover map containing predictions for approximately **576,000 pixels**.
+
+### 7. Evaluate the model
+
+The final model was evaluated using the held-out validation data.
+
+A classification report and normalized confusion matrix were used to measure performance and identify which classes were being confused with each other.
 
 ## Results
-- **Cross-validation accuracy** (training set, 5-fold): **91.7%** (± 3.2%)
-- **Validation set performance** (normalized confusion matrix):
-  - Water: 100% correctly classified
-  - Other: 95% correctly classified
-  - Forest: 90% correctly classified (10% confused with Tea)
-  - Tea: 78% correctly classified (20% confused with Other, 3% with Forest)
 
-**Interpretation**: Water and non-vegetated "Other" land are highly spectrally
-distinct and classified with high accuracy. Tea shows the most confusion, likely
-due to spectral overlap with forest (shared vegetation signal) and with "other"
-(variable canopy density and exposed soil between plantation rows). The large,
-contiguous forest block in the predicted output aligns well with the known
-location of Nyungwe Forest, supporting the plausibility of the results.
+### Cross-validation
 
+The Random Forest achieved:
+
+**91.7% ± 3.2% accuracy** using 5-fold cross-validation on the training set.
+
+### Validation performance
+
+The normalized confusion matrix showed the following results:
+
+| Class  | Correctly Classified |
+| ------ | -------------------: |
+| Water  |                 100% |
+| Other  |                  95% |
+| Forest |                  90% |
+| Tea    |                  78% |
+
+
+### Interpretation
+
+Water was the easiest class to identify, with all validation samples correctly classified. The **Other** class also performed well.
+
+**Tea** was the most difficult class to classify. This is likely because tea plantations and forests can have similar vegetation signals. Some tea areas may also contain exposed soil or areas with different canopy densities, which can make them more similar to the **Other** class.
+
+The predicted map also shows a large, continuous forest area
 ## Output
-- Predicted land cover map: `outputs/predicted_lulc.tif` (georeferenced GeoTIFF,
-  same CRS/extent as the input image)
-- Class code mapping: `{0: 'forest', 1: 'other', 2: 'tea', 3: 'water'}`
+
+The main output is:
+
+```text
+outputs/predicted_lulc.tif
+```
+
+This is a georeferenced GeoTIFF containing the predicted land cover classes. It uses the same CRS and spatial extent as the input Sentinel-2 image.
+
+### Class codes
+
+```text
+0 = Forest
+1 = Other
+2 = Tea
+3 = Water
+```
 
 ## Repository Structure
 
-'''
+```text
 rwanda-lulc-project/
+│
 ├── data/
-│ ├── train_val.shp (+ .shx, .dbf, .prj, .cpg) # training-validation points
-│ └── S2_srw.tif # Sentinel-2 image (not committed — large file)
+│   ├── train_val.shp
+│   ├── train_val.shx
+│   ├── train_val.dbf
+│   ├── train_val.prj
+│   ├── train_val.cpg
+│   └── S2_srw.tif              # Sentinel-2 image (not committed)
+│
 ├── notebooks/
-│ └── lulc_classification.ipynb # full analysis notebook
+│   └── lulc_classification.ipynb
+│
 ├── outputs/
-│ └── predicted_lulc.tif # final predicted LULC map
+│   └── predicted_lulc.tif      # Final LULC map
+│
 └── README.md
-
-'''
+```
